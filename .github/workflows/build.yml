@@ -18,7 +18,9 @@ jobs:
           autoconf automake libtool pkg-config \
           libffi-dev libssl-dev \
           aidl libstdc++6 python3-pip build-essential \
-          libncurses5-dev zlib1g-dev
+          libncurses5-dev zlib1g-dev \
+          gettext libltdl-dev # Added these for Libtool macro support
+
 
     - uses: actions/setup-python@v5
       with:
