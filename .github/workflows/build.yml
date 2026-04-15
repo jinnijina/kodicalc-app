@@ -3,59 +3,45 @@ name: Build APK
 on:
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Install system packages
       run: |
         sudo apt update
         sudo apt install -y \
-        git zip unzip openjdk-17-jdk \
-        autoconf automake libtool pkg-config \
-        libffi-dev libssl-dev
+          git zip unzip openjdk-17-jdk \
+          autoconf automake libtool pkg-config \
+          libffi-dev libssl-dev \
+          aidl libstdc++6 python3-pip build-essential \
+          libncurses5-dev zlib1g-dev
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - uses: actions/setup-python@v5
       with:
         python-version: "3.10"
 
-    - name: Install Buildozer
+    - name: Install Buildozer and Cython
       run: |
         pip install --upgrade pip
-        pip install buildozer cython
-
-    # 🔥 FIX ANDROID SDK ISSUE HERE
-    - name: Install Android SDK
-      run: |
-        mkdir -p $HOME/android-sdk/cmdline-tools
-        cd $HOME/android-sdk/cmdline-tools
-
-        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
-        unzip tools.zip
-        mv cmdline-tools latest
-
-        export ANDROID_HOME=$HOME/android-sdk
-        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
-
-        yes | sdkmanager --licenses
-        sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+        # Cython 0.29.33 is often the most stable for Kivy builds
+        pip install "cython<3.0.0" buildozer 
 
     - name: Build APK
       run: |
-        export ANDROID_HOME=$HOME/android-sdk
-        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
-        buildozer android debug
+        # We skip 'android update' because 'android debug' 
+        # handles it if accept_sdk_license=True is in buildozer.spec
+        buildozer -v android debug
+      env:
+        # This helps bypass some interactive prompts
+        APP_ANDROID_ACCEPT_SDK_LICENSE: "True"
 
-    - name: Upload APK
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: apk
+        name: my-kivymd-app
+        # Buildozer puts the final apk in the bin/ folder
         path: bin/*.apk
