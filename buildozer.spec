@@ -9,7 +9,7 @@ source.include_exts = py,png,jpg,kv
 
 version = 0.1
 
-requirements = python3,kivy,kivymd
+requirements = python3,kivy,kivymd,pillow
 
 icon.filename = icon.png
 
