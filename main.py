@@ -21,16 +21,17 @@ class LumberApp(MDApp):
 
         screen = Screen()
 
+        # Root Layout: Added a base spacing of dp(5) as a "Minimum Safety Gap"
         root = MDBoxLayout(
             orientation="vertical",
-            spacing=dp(5), 
-            padding=dp(10)
+            padding=dp(12),
+            spacing=dp(5) # ✅ This ensures rows never touch
         )
 
         # ================= 1. DISPLAY (TOP) =================
         display = MDBoxLayout(
             size_hint=(1, None),
-            height=dp(90),
+            height=dp(95),
             padding=[dp(15), dp(10), dp(15), dp(10)],
             md_bg_color=(0, 0, 0, 1)
         )
@@ -47,14 +48,10 @@ class LumberApp(MDApp):
         display.add_widget(self.result)
         root.add_widget(display)
 
-        # ================= 2. INPUT AREA (MIDDLE) =================
-        # Increased height and spacing slightly to prevent rows from feeling cramped
-        input_box = MDBoxLayout(
-            orientation="vertical",
-            size_hint=(1, None),
-            height=dp(230), # Increased from 215
-            spacing=dp(12)  # Increased vertical gap between rows
-        )
+        # Helper to add equal space
+        def add_equal_spacer():
+            # This spacer will expand on big screens but can shrink to 0 on small ones
+            root.add_widget(MDBoxLayout(size_hint_y=1))
 
         def create_field(hint):
             field = MDTextField(
@@ -76,39 +73,70 @@ class LumberApp(MDApp):
             box.add_widget(lbl); box.add_widget(ft); box.add_widget(inch)
             return box, ft, inch
 
+        # ✅ LAYOUT WITH MINIMUM GAP + FLEXIBLE SPACING
+        add_equal_spacer()
+        
         self.len_row, self.len_ft, self.len_in = row("L")
+        root.add_widget(self.len_row)
+        
+        add_equal_spacer()
+
         self.wid_row, self.wid_ft, self.wid_in = row("W")
+        root.add_widget(self.wid_row)
+        
+        add_equal_spacer()
+
         self.hei_row, self.hei_ft, self.hei_in = row("H")
+        root.add_widget(self.hei_row)
+        
+        add_equal_spacer()
 
         extra_row = MDBoxLayout(size_hint=(1, None), height=dp(45), spacing=dp(15))
         self.qty = create_field("Qty")
         self.rate = create_field("Rate")
         extra_row.add_widget(self.qty); extra_row.add_widget(self.rate)
+        root.add_widget(extra_row)
 
-        input_box.add_widget(self.len_row)
-        input_box.add_widget(self.wid_row)
-        input_box.add_widget(self.hei_row)
-        input_box.add_widget(extra_row)
-        root.add_widget(input_box)
+        add_equal_spacer()
 
-        # ================= 3. KEYPAD (BOTTOM) =================
-        keypad = MDBoxLayout(orientation="vertical", size_hint=(1, 1), spacing=dp(5))
+        # ================= 3. KEYPAD =================
+        keypad_container = MDBoxLayout(
+            orientation="vertical", 
+            size_hint=(1, None), 
+            height=dp(280), 
+            spacing=dp(8)
+        )
+
         keys = [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], [".", "0", "<<"]]
 
         for row_keys in keys:
-            row_box = MDBoxLayout(size_hint=(1, 1), spacing=dp(5))
+            row_box = MDBoxLayout(size_hint=(1, 1), spacing=dp(8))
             for k in row_keys:
-                btn = MDRaisedButton(text=k, size_hint=(1, 1), font_size="20sp", on_release=self.key_press)
+                btn = MDRaisedButton(
+                    text=k, 
+                    size_hint=(1, 1), 
+                    font_size="20sp", 
+                    on_release=self.key_press
+                )
                 row_box.add_widget(btn)
-            keypad.add_widget(row_box)
+            keypad_container.add_widget(row_box)
 
-        # ================= ENTER + CLEAR =================
-        bottom = MDBoxLayout(size_hint=(1, None), height=dp(55), spacing=dp(8))
-        btn_enter = MDRaisedButton(text="ENTER", size_hint=(0.7, 1), md_bg_color=self.theme_cls.primary_color, on_release=self.calculate)
-        btn_clear = MDFlatButton(text="CLEAR", size_hint=(0.3, 1), on_release=self.clear)
-        bottom.add_widget(btn_enter); bottom.add_widget(btn_clear)
-        keypad.add_widget(bottom)
-        root.add_widget(keypad)
+        bottom_btns = MDBoxLayout(size_hint=(1, 1), spacing=dp(10))
+        btn_enter = MDRaisedButton(
+            text="ENTER", 
+            size_hint=(0.7, 1), 
+            md_bg_color=self.theme_cls.primary_color, 
+            on_release=self.calculate
+        )
+        btn_clear = MDFlatButton(
+            text="CLEAR", 
+            size_hint=(0.3, 1), 
+            on_release=self.clear
+        )
+        bottom_btns.add_widget(btn_enter); bottom_btns.add_widget(btn_clear)
+        keypad_container.add_widget(bottom_btns)
+        
+        root.add_widget(keypad_container)
 
         screen.add_widget(root)
         return screen
@@ -119,10 +147,8 @@ class LumberApp(MDApp):
             for field in self.all_fields:
                 field.focus = False
                 field.line_color_normal = (0.5, 0.5, 0.5, 1)
-            
             instance.focus = True 
             instance.line_color_normal = self.theme_cls.primary_color 
-            
             if instance.text != "":
                 instance.text = ""
             return True
@@ -149,11 +175,9 @@ class LumberApp(MDApp):
             H = self.to_ft(self.hei_ft.text, self.hei_in.text)
             qty = int(self.qty.text or 1)
             rate = float(self.rate.text or 0)
-
             volume = L * W * H * qty
             total = volume * rate
             self.result.text = f"{volume:.2f} ft³\n{total:.2f}/-"
-            
             for field in self.all_fields:
                 if field.text == "":
                     field.focus = False
