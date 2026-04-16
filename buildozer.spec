@@ -9,9 +9,13 @@ source.include_exts = py,png,jpg,kv
 
 version = 0.1
 
-requirements = python3,kivy,kivymd,pillow
+# Added pillow (essential for KivyMD icons/images)
+requirements = python3,kivy==2.3.0,kivymd,pillow
 
 icon.filename = icon.png
+
+# LOCKS THE VIEW TO VERTICAL
+orientation = portrait
 
 fullscreen = 0
 
@@ -22,6 +26,12 @@ warn_on_root = 1
 
 [app:android]
 
-android.api = 31
+# FIXES THE SECURITY THREAT WARNING (Targets Android 13)
+android.api = 33
 android.minapi = 21
-android.arch = arm64-v8a
+
+# Includes both modern 64-bit and older 32-bit support
+android.archs = arm64-v8a, armeabi-v7a
+
+# MANDATORY for GitHub Actions
+android.accept_sdk_license = True
