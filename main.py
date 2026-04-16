@@ -7,7 +7,7 @@ from kivymd.uix.label import MDLabel
 from kivy.metrics import dp
 from kivy.core.window import Window
 
-# Fixed: Use "" to avoid the ValueError
+# Prevents the native Android keyboard from popping up
 Window.softinput_mode = ""
 
 class LumberApp(MDApp):
@@ -17,10 +17,10 @@ class LumberApp(MDApp):
         self.theme_cls.theme_style = "Light"
 
         self.active_input = None
+        self.all_fields = []
 
         screen = Screen()
 
-        # Root layout: stacked top to bottom
         root = MDBoxLayout(
             orientation="vertical",
             spacing=dp(5), 
@@ -48,113 +48,65 @@ class LumberApp(MDApp):
         root.add_widget(display)
 
         # ================= 2. INPUT AREA (MIDDLE) =================
+        # Increased height and spacing slightly to prevent rows from feeling cramped
         input_box = MDBoxLayout(
             orientation="vertical",
             size_hint=(1, None),
-            height=dp(215), # Slightly adjusted to fit new row spacing
-            spacing=dp(8)   # Increased vertical gap between L, W, H rows
+            height=dp(230), # Increased from 215
+            spacing=dp(12)  # Increased vertical gap between rows
         )
 
         def create_field(hint):
             field = MDTextField(
                 hint_text=hint,
-                readonly=True, 
                 mode="rectangle",
+                readonly=True, 
                 size_hint=(1, None),
                 height=dp(42)
             )
             field.bind(on_touch_down=self.set_active_touch)
+            self.all_fields.append(field)
             return field
 
         def row(label):
-            box = MDBoxLayout(
-                size_hint=(1, None),
-                height=dp(45),
-                spacing=dp(15) # ✅ Increased gap between ft and in textboxes
-            )
-
-            lbl = MDLabel(
-                text=label,
-                size_hint=(0.15, 1),
-                bold=True
-            )
-
+            box = MDBoxLayout(size_hint=(1, None), height=dp(45), spacing=dp(15))
+            lbl = MDLabel(text=label, size_hint=(0.15, 1), bold=True)
             ft = create_field("ft")
             inch = create_field("in")
-
-            box.add_widget(lbl)
-            box.add_widget(ft)
-            box.add_widget(inch)
-
+            box.add_widget(lbl); box.add_widget(ft); box.add_widget(inch)
             return box, ft, inch
 
         self.len_row, self.len_ft, self.len_in = row("L")
         self.wid_row, self.wid_ft, self.wid_in = row("W")
         self.hei_row, self.hei_ft, self.hei_in = row("H")
 
-        # Increased horizontal spacing for Qty and Rate too
         extra_row = MDBoxLayout(size_hint=(1, None), height=dp(45), spacing=dp(15))
         self.qty = create_field("Qty")
         self.rate = create_field("Rate")
-        extra_row.add_widget(self.qty)
-        extra_row.add_widget(self.rate)
+        extra_row.add_widget(self.qty); extra_row.add_widget(self.rate)
 
         input_box.add_widget(self.len_row)
         input_box.add_widget(self.wid_row)
         input_box.add_widget(self.hei_row)
         input_box.add_widget(extra_row)
-
         root.add_widget(input_box)
 
         # ================= 3. KEYPAD (BOTTOM) =================
-        keypad = MDBoxLayout(
-            orientation="vertical",
-            size_hint=(1, 1), 
-            spacing=dp(5)
-        )
-
-        keys = [
-            ["7", "8", "9"],
-            ["4", "5", "6"],
-            ["1", "2", "3"],
-            [".", "0", "⌫"]
-        ]
+        keypad = MDBoxLayout(orientation="vertical", size_hint=(1, 1), spacing=dp(5))
+        keys = [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], [".", "0", "<<"]]
 
         for row_keys in keys:
             row_box = MDBoxLayout(size_hint=(1, 1), spacing=dp(5))
             for k in row_keys:
-                btn = MDRaisedButton(
-                    text=k,
-                    size_hint=(1, 1),
-                    font_size="20sp",
-                    on_release=self.key_press
-                )
+                btn = MDRaisedButton(text=k, size_hint=(1, 1), font_size="20sp", on_release=self.key_press)
                 row_box.add_widget(btn)
             keypad.add_widget(row_box)
 
         # ================= ENTER + CLEAR =================
-        bottom = MDBoxLayout(
-            size_hint=(1, None),
-            height=dp(55),
-            spacing=dp(8)
-        )
-
-        btn_enter = MDRaisedButton(
-            text="ENTER",
-            size_hint=(0.7, 1),
-            md_bg_color=self.theme_cls.primary_color,
-            on_release=self.calculate
-        )
-
-        btn_clear = MDFlatButton(
-            text="CLEAR",
-            size_hint=(0.3, 1),
-            on_release=self.clear
-        )
-
-        bottom.add_widget(btn_enter)
-        bottom.add_widget(btn_clear)
-
+        bottom = MDBoxLayout(size_hint=(1, None), height=dp(55), spacing=dp(8))
+        btn_enter = MDRaisedButton(text="ENTER", size_hint=(0.7, 1), md_bg_color=self.theme_cls.primary_color, on_release=self.calculate)
+        btn_clear = MDFlatButton(text="CLEAR", size_hint=(0.3, 1), on_release=self.clear)
+        bottom.add_widget(btn_enter); bottom.add_widget(btn_clear)
         keypad.add_widget(bottom)
         root.add_widget(keypad)
 
@@ -164,10 +116,15 @@ class LumberApp(MDApp):
     def set_active_touch(self, instance, touch):
         if instance.collide_point(*touch.pos):
             self.active_input = instance
-            for field in [self.len_ft, self.len_in, self.wid_ft, self.wid_in, 
-                          self.hei_ft, self.hei_in, self.qty, self.rate]:
+            for field in self.all_fields:
+                field.focus = False
                 field.line_color_normal = (0.5, 0.5, 0.5, 1)
-            instance.line_color_normal = (0, 1, 0, 1)
+            
+            instance.focus = True 
+            instance.line_color_normal = self.theme_cls.primary_color 
+            
+            if instance.text != "":
+                instance.text = ""
             return True
         return False
 
@@ -177,6 +134,7 @@ class LumberApp(MDApp):
             self.active_input.text = self.active_input.text[:-1]
         else:
             self.active_input.text += obj.text
+        self.active_input.focus = True
 
     def to_ft(self, ft, inch):
         try:
@@ -195,15 +153,21 @@ class LumberApp(MDApp):
             volume = L * W * H * qty
             total = volume * rate
             self.result.text = f"{volume:.2f} ft³\n{total:.2f}/-"
+            
+            for field in self.all_fields:
+                if field.text == "":
+                    field.focus = False
+                    field.line_color_normal = (0.5, 0.5, 0.5, 1)
         except:
             self.result.text = "ERROR"
 
     def clear(self, obj):
-        for w in [self.len_ft, self.len_in, self.wid_ft, self.wid_in, 
-                  self.hei_ft, self.hei_in, self.qty, self.rate]:
+        for w in self.all_fields:
             w.text = ""
+            w.focus = False
+            w.line_color_normal = (0.5, 0.5, 0.5, 1)
         self.result.text = "0.00"
-
+        self.active_input = None
 
 if __name__ == "__main__":
     LumberApp().run()
