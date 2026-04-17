@@ -21,7 +21,7 @@ except:
 
 class LumberApp(MDApp):
 
-    def vibrate(self, ms=75):
+    def vibrate(self, ms=30):
         if VIBRATE:
             try:
                 # Some Android versions require seconds (float) instead of milliseconds
