@@ -10,7 +10,7 @@ source.include_exts = py,png,jpg,kv
 version = 0.1
 
 # Added pillow (essential for KivyMD icons/images)
-requirements = python3,kivy==2.3.0,kivymd,pillow
+requirements = python3,kivy==2.3.0,kivymd,pillow,plyer,android
 
 android.permissions = VIBRATE
 
