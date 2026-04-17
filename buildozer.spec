@@ -12,6 +12,8 @@ version = 0.1
 # Added pillow (essential for KivyMD icons/images)
 requirements = python3,kivy==2.3.0,kivymd,pillow
 
+android.permissions = VIBRATE
+
 icon.filename = icon.png
 
 # LOCKS THE VIEW TO VERTICAL
