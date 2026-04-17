@@ -21,12 +21,15 @@ except:
 
 class LumberApp(MDApp):
 
-    def vibrate(self, ms=30):
+    def vibrate(self, ms=75):
         if VIBRATE:
             try:
-                vibrator.vibrate(ms)
-            except:
-                pass
+                # Some Android versions require seconds (float) instead of milliseconds
+                # but Plyer usually handles the conversion. 
+                # Ensure the duration is passed as an argument.
+                vibrator.vibrate(time=ms/1000.0) 
+            except Exception as e:
+                print(f"Vibrate failed: {e}")
 
     def build(self):
         self.theme_cls.primary_palette = "Green"
